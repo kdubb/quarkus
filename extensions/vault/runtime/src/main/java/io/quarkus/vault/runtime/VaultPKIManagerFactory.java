@@ -13,6 +13,8 @@ import io.quarkus.vault.runtime.client.secretengine.VaultInternalPKISecretEngine
 @ApplicationScoped
 public class VaultPKIManagerFactory implements VaultPKISecretEngineFactory {
 
+    static final String PKI_ENGINE_NAME = "pki";
+
     @Inject
     private VaultAuthManager vaultAuthManager;
     @Inject
@@ -28,7 +30,7 @@ public class VaultPKIManagerFactory implements VaultPKISecretEngineFactory {
     @Override
     public void enable(String mount, String description, EnableEngineOptions options) {
         VaultEnableEngineBody body = new VaultEnableEngineBody();
-        body.type = "pki";
+        body.type = PKI_ENGINE_NAME;
         body.description = description;
         body.config = new VaultEnableEngineBody.Config();
         body.config.defaultLeaseTimeToLive = options.defaultLeaseTimeToLive;

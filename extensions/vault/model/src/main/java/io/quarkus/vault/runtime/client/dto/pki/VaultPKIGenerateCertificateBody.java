@@ -26,10 +26,10 @@ public class VaultPKIGenerateCertificateBody implements VaultModel {
     @JsonProperty("ttl")
     public String timeToLive;
 
-    public String format = "pem";
+    public String format = VaultPKIConstants.CERTIFICATE_FORMAT;
 
     @JsonProperty("private_key_format")
-    public String privateKeyFormat = "pkcs8";
+    public String privateKeyFormat = VaultPKIConstants.KEY_FORMAT;
 
     @JsonProperty("exclude_cn_from_sans")
     public Boolean excludeCommonNameFromSubjectAlternativeNames;

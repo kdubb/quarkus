@@ -1,5 +1,6 @@
 package io.quarkus.vault.runtime;
 
+import static io.quarkus.vault.runtime.VaultPKIManagerFactory.PKI_ENGINE_NAME;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -71,7 +72,7 @@ public class VaultPKIManager implements VaultPKISecretEngine {
     public VaultPKIManager(
             VaultAuthManager vaultAuthManager,
             VaultInternalPKISecretEngine vaultInternalPKISecretEngine) {
-        this("pki", vaultAuthManager, vaultInternalPKISecretEngine);
+        this(PKI_ENGINE_NAME, vaultAuthManager, vaultInternalPKISecretEngine);
     }
 
     VaultPKIManager(

@@ -50,10 +50,10 @@ public class VaultPKIGenerateRootBody implements VaultModel {
     @JsonProperty("ttl")
     public String timeToLive;
 
-    public String format = "pem";
+    public String format = VaultPKIConstants.CERTIFICATE_FORMAT;
 
     @JsonProperty("private_key_format")
-    public String privateKeyFormat = "pkcs8";
+    public String privateKeyFormat = VaultPKIConstants.KEY_FORMAT;
 
     @JsonProperty("key_type")
     public String keyType;

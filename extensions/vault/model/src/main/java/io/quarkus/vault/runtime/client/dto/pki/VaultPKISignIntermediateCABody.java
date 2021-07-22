@@ -52,7 +52,7 @@ public class VaultPKISignIntermediateCABody implements VaultModel {
     @JsonProperty("ttl")
     public String timeToLive;
 
-    public String format = "pem";
+    public String format = VaultPKIConstants.CERTIFICATE_FORMAT;
 
     @JsonProperty("max_path_length")
     public Integer maxPathLength;
