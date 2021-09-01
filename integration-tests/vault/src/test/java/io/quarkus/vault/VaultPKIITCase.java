@@ -75,6 +75,9 @@ public class VaultPKIITCase {
     @Inject
     VaultPKISecretEngineFactory pkiSecretEngineFactory;
 
+    @Inject
+    VaultSystemBackendEngine systemBackendEngine;
+
     @AfterEach
     public void cleanup() {
         try {
@@ -868,15 +871,15 @@ public class VaultPKIITCase {
 
     @Test
     public void testEnableDisable() {
-        assertFalse(pkiSecretEngineFactory.isEnabled("pki-dyn"));
+        assertFalse(systemBackendEngine.isEngineMounted("pki-dyn"));
 
         EnableEngineOptions options = new EnableEngineOptions();
         assertDoesNotThrow(() -> pkiSecretEngineFactory.enable("pki-dyn", "Dynamic test engine", options));
 
-        assertTrue(pkiSecretEngineFactory.isEnabled("pki-dyn"));
+        assertTrue(systemBackendEngine.isEngineMounted("pki-dyn"));
 
         assertDoesNotThrow(() -> pkiSecretEngineFactory.disable("pki-dyn"));
 
-        assertFalse(pkiSecretEngineFactory.isEnabled("pki-dyn"));
+        assertFalse(systemBackendEngine.isEngineMounted("pki-dyn"));
     }
 }

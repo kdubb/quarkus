@@ -7,6 +7,7 @@ import io.quarkus.vault.sys.VaultHealth;
 import io.quarkus.vault.sys.VaultHealthStatus;
 import io.quarkus.vault.sys.VaultInit;
 import io.quarkus.vault.sys.VaultSealStatus;
+import io.quarkus.vault.sys.VaultTuneInfo;
 
 /**
  * This service provides access to the system backend.
@@ -79,4 +80,29 @@ public interface VaultSystemBackendEngine {
      * @return a list of all policy names
      */
     List<String> getPolicies();
+
+    /**
+     * Get the tune info for a secret engine at a specific mount.
+     *
+     * @param mount Name of the mount
+     * @return current tune info
+     */
+    VaultTuneInfo getTuneInfo(String mount);
+
+    /**
+     * Update the tune info for a secret engine at a specific mount.
+     *
+     * @param mount Name of the mount
+     * @param tuneInfo Tune info with fields to update
+     * @return updated tune info
+     */
+    void updateTuneInfo(String mount, VaultTuneInfo tuneInfo);
+
+    /**
+     * Check if an engine is mounted at a specific mount.
+     *
+     * @param mount Name of the mount
+     * @return True if an engine is mounted, false otherwise
+     */
+    boolean isEngineMounted(String mount);
 }

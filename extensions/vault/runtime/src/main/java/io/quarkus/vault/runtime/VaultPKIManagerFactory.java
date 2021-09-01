@@ -43,9 +43,4 @@ public class VaultPKIManagerFactory implements VaultPKISecretEngineFactory {
     public void disable(String mount) {
         vaultInternalSystemBackend.disableEngine(vaultAuthManager.getClientToken(), mount);
     }
-
-    @Override
-    public boolean isEnabled(String mount) {
-        return vaultInternalPKISecretEngine.checkEngineEnabled(vaultAuthManager.getClientToken(), mount);
-    }
 }

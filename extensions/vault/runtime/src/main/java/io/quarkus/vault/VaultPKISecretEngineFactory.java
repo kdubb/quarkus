@@ -34,12 +34,4 @@ public interface VaultPKISecretEngineFactory {
      */
     void disable(String mount);
 
-    /**
-     * Check if PKI is enabled at specific mount.
-     *
-     * @param mount Engine mount path.
-     * @return True is PKI is enabled at mount, false otherwise.
-     */
-    boolean isEnabled(String mount);
-
 }

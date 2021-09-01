@@ -136,13 +136,4 @@ public class VaultInternalPKISecretEngine extends VaultInternalBase {
     public VaultPKIConfigCRLResult readCRL(String token, String mount) {
         return vaultClient.get(getPath(mount, "config/crl"), token, VaultPKIConfigCRLResult.class);
     }
-
-    public boolean checkEngineEnabled(String token, String mount) {
-        try {
-            configURLs(token, mount, new VaultPKIConfigURLsData());
-            return true;
-        } catch (Throwable x) {
-            return false;
-        }
-    }
 }

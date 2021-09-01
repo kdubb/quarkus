@@ -6,16 +6,20 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.quarkus.vault.VaultSystemBackendEngine;
+import io.quarkus.vault.runtime.client.VaultClientException;
 import io.quarkus.vault.runtime.client.backend.VaultInternalSystemBackend;
 import io.quarkus.vault.runtime.client.dto.sys.VaultHealthResult;
 import io.quarkus.vault.runtime.client.dto.sys.VaultInitResponse;
 import io.quarkus.vault.runtime.client.dto.sys.VaultPolicyBody;
 import io.quarkus.vault.runtime.client.dto.sys.VaultSealStatusResult;
+import io.quarkus.vault.runtime.client.dto.sys.VaultTuneBody;
+import io.quarkus.vault.runtime.client.dto.sys.VaultTuneResult;
 import io.quarkus.vault.runtime.config.VaultBuildTimeConfig;
 import io.quarkus.vault.sys.VaultHealth;
 import io.quarkus.vault.sys.VaultHealthStatus;
 import io.quarkus.vault.sys.VaultInit;
 import io.quarkus.vault.sys.VaultSealStatus;
+import io.quarkus.vault.sys.VaultTuneInfo;
 
 @ApplicationScoped
 public class VaultSystemBackendManager implements VaultSystemBackendEngine {
@@ -130,5 +134,43 @@ public class VaultSystemBackendManager implements VaultSystemBackendEngine {
     public List<String> getPolicies() {
         String token = vaultAuthManager.getClientToken();
         return vaultInternalSystemBackend.listPolicies(token).data.policies;
+    }
+
+    @Override
+    public VaultTuneInfo getTuneInfo(String mount) {
+        String token = vaultAuthManager.getClientToken();
+        VaultTuneResult vaultTuneResult = vaultInternalSystemBackend.getTuneInfo(token, mount);
+
+        VaultTuneInfo tuneInfo = new VaultTuneInfo();
+        tuneInfo.setDefaultLeaseTimeToLive(vaultTuneResult.data.defaultLeaseTimeToLive);
+        tuneInfo.setMaxLeaseTimeToLive(vaultTuneResult.data.maxLeaseTimeToLive);
+        tuneInfo.setDescription(vaultTuneResult.data.description);
+        tuneInfo.setForceNoCache(vaultTuneResult.data.forceNoCache);
+        return tuneInfo;
+    }
+
+    @Override
+    public void updateTuneInfo(String mount, VaultTuneInfo tuneInfoUpdates) {
+        VaultTuneBody body = new VaultTuneBody();
+        body.description = tuneInfoUpdates.getDescription();
+        body.defaultLeaseTimeToLive = tuneInfoUpdates.getDefaultLeaseTimeToLive();
+        body.maxLeaseTimeToLive = tuneInfoUpdates.getMaxLeaseTimeToLive();
+        body.forceNoCache = tuneInfoUpdates.getForceNoCache();
+
+        String token = vaultAuthManager.getClientToken();
+        vaultInternalSystemBackend.updateTuneInfo(token, mount, body);
+    }
+
+    @Override
+    public boolean isEngineMounted(String mount) {
+        try {
+            getTuneInfo(mount);
+            return true;
+        } catch (VaultClientException x) {
+            if (x.getStatus() != 400) {
+                throw x;
+            }
+            return false;
+        }
     }
 }

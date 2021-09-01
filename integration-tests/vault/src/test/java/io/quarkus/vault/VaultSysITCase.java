@@ -3,6 +3,7 @@ package io.quarkus.vault;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.quarkus.test.QuarkusUnitTest;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.vault.sys.VaultSealStatus;
+import io.quarkus.vault.sys.VaultTuneInfo;
 import io.quarkus.vault.test.VaultTestLifecycleManager;
 
 @DisabledOnOs(OS.WINDOWS) // https://github.com/quarkusio/quarkus/issues/3796
@@ -54,5 +56,22 @@ public class VaultSysITCase {
         vaultSystemBackendEngine.deletePolicy(name);
         policies = vaultSystemBackendEngine.getPolicies();
         assertFalse(policies.contains(name));
+    }
+
+    @Test
+    public void testTuneInfo() {
+        VaultTuneInfo tuneInfo = vaultSystemBackendEngine.getTuneInfo("secret");
+        assertNotNull(tuneInfo.getDescription());
+        assertNotNull(tuneInfo.getDefaultLeaseTimeToLive());
+        assertNotNull(tuneInfo.getMaxLeaseTimeToLive());
+        assertNotNull(tuneInfo.getForceNoCache());
+
+        VaultTuneInfo tuneInfoUpdates = new VaultTuneInfo();
+        tuneInfoUpdates.setMaxLeaseTimeToLive(tuneInfo.getMaxLeaseTimeToLive() + 10);
+        vaultSystemBackendEngine.updateTuneInfo("secret", tuneInfoUpdates);
+
+        VaultTuneInfo updatedTuneInfo = vaultSystemBackendEngine.getTuneInfo("secret");
+
+        assertEquals(tuneInfo.getMaxLeaseTimeToLive() + 10, updatedTuneInfo.getMaxLeaseTimeToLive());
     }
 }
