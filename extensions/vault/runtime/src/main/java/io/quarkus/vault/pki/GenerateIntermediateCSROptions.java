@@ -96,6 +96,17 @@ public class GenerateIntermediateCSROptions {
     public Integer keyBits;
 
     /**
+     * Specifies returned format of CSR & private key data. If unspecified it defaults
+     * to {@link DataFormat#PEM}
+     */
+    public DataFormat format;
+
+    /**
+     * Specifies encoding of private key data. If unspecified it defaults to {@link PrivateKeyEncoding#PKCS8}.
+     */
+    public PrivateKeyEncoding privateKeyEncoding;
+
+    /**
      * Flag determining if the generated private key should be exported or kept internally.
      */
     public boolean exportPrivateKey = false;
@@ -187,6 +198,17 @@ public class GenerateIntermediateCSROptions {
 
     public GenerateIntermediateCSROptions setExportPrivateKey(boolean exportPrivateKey) {
         this.exportPrivateKey = exportPrivateKey;
+        return this;
+    }
+
+    public GenerateIntermediateCSROptions setFormat(DataFormat format) {
+        this.format = format;
+        return this;
+    }
+
+    public GenerateIntermediateCSROptions setPrivateKeyEncoding(
+            PrivateKeyEncoding privateKeyEncoding) {
+        this.privateKeyEncoding = privateKeyEncoding;
         return this;
     }
 }

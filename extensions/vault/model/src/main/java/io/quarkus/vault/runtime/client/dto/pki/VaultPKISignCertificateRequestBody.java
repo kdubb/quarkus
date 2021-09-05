@@ -28,7 +28,7 @@ public class VaultPKISignCertificateRequestBody implements VaultModel {
     @JsonProperty("ttl")
     public String timeToLive;
 
-    public String format = VaultPKIConstants.CERTIFICATE_FORMAT;
+    public String format;
 
     @JsonProperty("exclude_cn_from_sans")
     public Boolean excludeCommonNameFromSubjectAlternativeNames;

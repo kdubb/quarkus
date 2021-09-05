@@ -6,7 +6,10 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -14,17 +17,22 @@ import javax.inject.Inject;
 
 import io.quarkus.vault.VaultException;
 import io.quarkus.vault.VaultPKISecretEngine;
+import io.quarkus.vault.pki.CSRData;
+import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.CertificateExtendedKeyUsage;
 import io.quarkus.vault.pki.CertificateKeyType;
 import io.quarkus.vault.pki.CertificateKeyUsage;
 import io.quarkus.vault.pki.ConfigCRLOptions;
 import io.quarkus.vault.pki.ConfigURLsOptions;
+import io.quarkus.vault.pki.DataFormat;
 import io.quarkus.vault.pki.GenerateCertificateOptions;
 import io.quarkus.vault.pki.GenerateIntermediateCSROptions;
 import io.quarkus.vault.pki.GenerateRootOptions;
 import io.quarkus.vault.pki.GeneratedCertificate;
 import io.quarkus.vault.pki.GeneratedIntermediateCSRResult;
 import io.quarkus.vault.pki.GeneratedRootCertificate;
+import io.quarkus.vault.pki.PrivateKeyData;
+import io.quarkus.vault.pki.PrivateKeyEncoding;
 import io.quarkus.vault.pki.RoleOptions;
 import io.quarkus.vault.pki.SignIntermediateCAOptions;
 import io.quarkus.vault.pki.SignedCertificate;
@@ -39,6 +47,7 @@ import io.quarkus.vault.runtime.client.dto.pki.VaultPKIConfigCRLData;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKIConfigCRLResult;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKIConfigURLsData;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKIConfigURLsResult;
+import io.quarkus.vault.runtime.client.dto.pki.VaultPKIConstants;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKIGenerateCertificateBody;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKIGenerateCertificateData;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKIGenerateCertificateResult;
@@ -89,11 +98,11 @@ public class VaultPKIManager implements VaultPKISecretEngine {
     }
 
     @Override
-    public String getCertificateAuthority() {
+    public CertificateData.PEM getCertificateAuthority() {
         VaultPKICertificateResult internalResult = vaultInternalPKISecretEngine.getCertificate(getToken(), mount, "ca");
         checkDataValid(internalResult);
 
-        return internalResult.data.certificate;
+        return new CertificateData.PEM(internalResult.data.certificate);
     }
 
     @Override
@@ -184,16 +193,18 @@ public class VaultPKIManager implements VaultPKISecretEngine {
     }
 
     @Override
-    public String getCertificate(String serial) {
+    public CertificateData.PEM getCertificate(String serial) {
         VaultPKICertificateResult internalResult = vaultInternalPKISecretEngine.getCertificate(getToken(), mount, serial);
         checkDataValid(internalResult);
 
-        return internalResult.data.certificate;
+        return new CertificateData.PEM(internalResult.data.certificate);
     }
 
     @Override
     public GeneratedCertificate generateCertificate(String role, GenerateCertificateOptions options) {
         VaultPKIGenerateCertificateBody body = new VaultPKIGenerateCertificateBody();
+        body.format = dataFormatToFormat(options.format);
+        body.privateKeyFormat = privateKeyFormat(options.format, options.privateKeyEncoding);
         body.subjectCommonName = options.subjectCommonName;
         body.subjectAlternativeNames = stringListToCommaString(options.subjectAlternativeNames);
         body.ipSubjectAlternativeNames = stringListToCommaString(options.ipSubjectAlternativeNames);
@@ -209,18 +220,19 @@ public class VaultPKIManager implements VaultPKISecretEngine {
         VaultPKIGenerateCertificateData internalResultData = internalResult.data;
 
         GeneratedCertificate result = new GeneratedCertificate();
-        result.certificate = internalResultData.certificate;
-        result.issuingCA = internalResultData.issuingCA;
-        result.caChain = internalResultData.caChain;
+        result.certificate = createCertificateData(internalResultData.certificate, body.format);
+        result.issuingCA = createCertificateData(internalResultData.issuingCA, body.format);
+        result.caChain = createCertificateDataList(internalResultData.caChain, body.format);
         result.serialNumber = internalResultData.serialNumber;
         result.privateKeyType = stringToCertificateKeyType(internalResultData.privateKeyType);
-        result.privateKey = internalResultData.privateKey;
+        result.privateKey = createPrivateKeyData(internalResultData.privateKey, body.format, body.privateKeyFormat);
         return result;
     }
 
     @Override
     public SignedCertificate signRequest(String role, String pemSigningRequest, GenerateCertificateOptions options) {
         VaultPKISignCertificateRequestBody body = new VaultPKISignCertificateRequestBody();
+        body.format = dataFormatToFormat(options.format);
         body.csr = pemSigningRequest;
         body.subjectCommonName = options.subjectCommonName;
         body.subjectAlternativeNames = stringListToCommaString(options.subjectAlternativeNames);
@@ -237,9 +249,9 @@ public class VaultPKIManager implements VaultPKISecretEngine {
         VaultPKISignCertificateRequestData internalResultData = internalResult.data;
 
         SignedCertificate result = new SignedCertificate();
-        result.certificate = internalResultData.certificate;
-        result.issuingCA = internalResultData.issuingCA;
-        result.caChain = internalResultData.caChain;
+        result.certificate = createCertificateData(internalResultData.certificate, body.format);
+        result.issuingCA = createCertificateData(internalResultData.issuingCA, body.format);
+        result.caChain = createCertificateDataList(internalResultData.caChain, body.format);
         result.serialNumber = internalResultData.serialNumber;
         return result;
     }
@@ -379,6 +391,8 @@ public class VaultPKIManager implements VaultPKISecretEngine {
     public GeneratedRootCertificate generateRoot(GenerateRootOptions options) {
         String type = options.exportPrivateKey ? "exported" : "internal";
         VaultPKIGenerateRootBody body = new VaultPKIGenerateRootBody();
+        body.format = dataFormatToFormat(options.format);
+        body.privateKeyFormat = privateKeyFormat(options.format, options.privateKeyEncoding);
         body.subjectCommonName = options.subjectCommonName;
         body.subjectAlternativeNames = stringListToCommaString(options.subjectAlternativeNames);
         body.ipSubjectAlternativeNames = stringListToCommaString(options.ipSubjectAlternativeNames);
@@ -405,11 +419,11 @@ public class VaultPKIManager implements VaultPKISecretEngine {
         VaultPKIGenerateRootData internalResultData = internalResult.data;
 
         GeneratedRootCertificate result = new GeneratedRootCertificate();
-        result.certificate = internalResultData.certificate;
-        result.issuingCA = internalResultData.issuingCA;
+        result.certificate = createCertificateData(internalResultData.certificate, body.format);
+        result.issuingCA = createCertificateData(internalResultData.issuingCA, body.format);
         result.serialNumber = internalResultData.serialNumber;
         result.privateKeyType = stringToCertificateKeyType(internalResultData.privateKeyType);
-        result.privateKey = internalResultData.privateKey;
+        result.privateKey = createPrivateKeyData(internalResultData.privateKey, body.format, body.privateKeyFormat);
         return result;
     }
 
@@ -421,6 +435,7 @@ public class VaultPKIManager implements VaultPKISecretEngine {
     @Override
     public SignedCertificate signIntermediateCA(String pemSigningRequest, SignIntermediateCAOptions options) {
         VaultPKISignIntermediateCABody body = new VaultPKISignIntermediateCABody();
+        body.format = dataFormatToFormat(options.format);
         body.csr = pemSigningRequest;
         body.subjectCommonName = options.subjectCommonName;
         body.subjectAlternativeNames = stringListToCommaString(options.subjectAlternativeNames);
@@ -448,9 +463,9 @@ public class VaultPKIManager implements VaultPKISecretEngine {
         VaultPKISignCertificateRequestData internalResultData = internalResult.data;
 
         SignedCertificate result = new SignedCertificate();
-        result.certificate = internalResultData.certificate;
-        result.issuingCA = internalResultData.issuingCA;
-        result.caChain = internalResultData.caChain;
+        result.certificate = createCertificateData(internalResultData.certificate, body.format);
+        result.issuingCA = createCertificateData(internalResultData.issuingCA, body.format);
+        result.caChain = createCertificateDataList(internalResultData.caChain, body.format);
         result.serialNumber = internalResultData.serialNumber;
         return result;
     }
@@ -459,6 +474,8 @@ public class VaultPKIManager implements VaultPKISecretEngine {
     public GeneratedIntermediateCSRResult generateIntermediateCSR(GenerateIntermediateCSROptions options) {
         String type = options.exportPrivateKey ? "exported" : "internal";
         VaultPKIGenerateIntermediateCSRBody body = new VaultPKIGenerateIntermediateCSRBody();
+        body.format = dataFormatToFormat(options.format);
+        body.privateKeyFormat = privateKeyFormat(options.format, options.privateKeyEncoding);
         body.subjectCommonName = options.subjectCommonName;
         body.subjectAlternativeNames = stringListToCommaString(options.subjectAlternativeNames);
         body.ipSubjectAlternativeNames = stringListToCommaString(options.ipSubjectAlternativeNames);
@@ -482,9 +499,9 @@ public class VaultPKIManager implements VaultPKISecretEngine {
         VaultPKIGenerateIntermediateCSRData internalResultData = internalResult.data;
 
         GeneratedIntermediateCSRResult result = new GeneratedIntermediateCSRResult();
-        result.csr = internalResultData.csr;
+        result.csr = createCSRData(internalResultData.csr, body.format);
         result.privateKeyType = stringToCertificateKeyType(internalResultData.privateKeyType);
-        result.privateKey = internalResultData.privateKey;
+        result.privateKey = createPrivateKeyData(internalResultData.privateKey, body.format, body.privateKeyFormat);
         return result;
     }
 
@@ -559,5 +576,83 @@ public class VaultPKIManager implements VaultPKISecretEngine {
             }
         }
         throw new VaultException("Unknown vault error");
+    }
+
+    private String dataFormatToFormat(DataFormat format) {
+        if (format == null) {
+            return VaultPKIConstants.DEFAULT_CERTIFICATE_FORMAT;
+        }
+        return format.name().toLowerCase(Locale.ROOT);
+    }
+
+    private String nonNullFormat(String format) {
+        if (format == null) {
+            return VaultPKIConstants.DEFAULT_CERTIFICATE_FORMAT;
+        }
+        return format;
+    }
+
+    private String privateKeyFormat(DataFormat format, PrivateKeyEncoding privateKeyEncoding) {
+        if (privateKeyEncoding == null) {
+            return VaultPKIConstants.DEFAULT_KEY_ENCODING;
+        }
+        if (privateKeyEncoding == PrivateKeyEncoding.PKCS8) {
+            return "pkcs8";
+        }
+        return dataFormatToFormat(format);
+    }
+
+    private CertificateData createCertificateData(String data, String format) {
+        if (data == null) {
+            return null;
+        }
+        switch (nonNullFormat(format)) {
+            case "der":
+                return new CertificateData.DER(Base64.getDecoder().decode(data));
+            case "pem":
+                return new CertificateData.PEM(data);
+            default:
+                throw new VaultException("Unsupported certificate format");
+        }
+    }
+
+    private List<CertificateData> createCertificateDataList(List<String> datas, String format) {
+        if (datas == null) {
+            return null;
+        }
+        List<CertificateData> result = new ArrayList<>(datas.size());
+        for (String data : datas) {
+            result.add(createCertificateData(data, format));
+        }
+        return result;
+    }
+
+    private CSRData createCSRData(String data, String format) {
+        if (data == null) {
+            return null;
+        }
+        switch (nonNullFormat(format)) {
+            case "der":
+                return new CSRData.DER(Base64.getDecoder().decode(data));
+            case "pem":
+                return new CSRData.PEM(data);
+            default:
+                throw new VaultException("Unsupported certification request format");
+        }
+    }
+
+    private PrivateKeyData createPrivateKeyData(String data, String format, String privateKeyFormat) {
+        if (data == null) {
+            return null;
+        }
+        boolean pkcs8 = "pkcs8".equals(privateKeyFormat.toLowerCase(Locale.ROOT));
+        switch (nonNullFormat(format)) {
+            case "der":
+                return new PrivateKeyData.DER(Base64.getDecoder().decode(data), pkcs8);
+            case "pem":
+                return new PrivateKeyData.PEM(data, pkcs8);
+            default:
+                throw new VaultException("Unsupported private key format");
+        }
     }
 }

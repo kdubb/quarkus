@@ -15,19 +15,19 @@ public class GeneratedCertificate {
     public String serialNumber;
 
     /**
-     * Generated certificate (PEM encoded).
+     * Generated certificate.
      */
-    public String certificate;
+    public CertificateData certificate;
 
     /**
-     * Issuing CA of generated certificate (PEM encoded).
+     * Issuing CA of generated certificate.
      */
-    public String issuingCA;
+    public CertificateData issuingCA;
 
     /**
-     * Complete CA chain of generated certificate (elements are PEM encoded).
+     * Complete CA chain of generated certificate.
      */
-    public List<String> caChain;
+    public List<CertificateData> caChain;
 
     /**
      * Type of generated private key
@@ -37,24 +37,24 @@ public class GeneratedCertificate {
     /**
      * Generated private Key (PEM Encoded).
      */
-    public String privateKey;
+    public PrivateKeyData privateKey;
 
     public GeneratedCertificate setSerialNumber(String serialNumber) {
         this.serialNumber = serialNumber;
         return this;
     }
 
-    public GeneratedCertificate setCertificate(String certificate) {
+    public GeneratedCertificate setCertificate(CertificateData certificate) {
         this.certificate = certificate;
         return this;
     }
 
-    public GeneratedCertificate setIssuingCA(String issuingCA) {
+    public GeneratedCertificate setIssuingCA(CertificateData issuingCA) {
         this.issuingCA = issuingCA;
         return this;
     }
 
-    public GeneratedCertificate setCaChain(List<String> caChain) {
+    public GeneratedCertificate setCaChain(List<CertificateData> caChain) {
         this.caChain = caChain;
         return this;
     }
@@ -64,7 +64,7 @@ public class GeneratedCertificate {
         return this;
     }
 
-    public GeneratedCertificate setPrivateKey(String privateKey) {
+    public GeneratedCertificate setPrivateKey(PrivateKeyData privateKey) {
         this.privateKey = privateKey;
         return this;
     }

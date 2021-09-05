@@ -8,9 +8,9 @@ import io.quarkus.vault.VaultPKISecretEngine;
 public class GeneratedIntermediateCSRResult {
 
     /**
-     * Certificate Signing Request (PEM encoded).
+     * Certificate Signing Request.
      */
-    public String csr;
+    public CSRData csr;
 
     /**
      * Type of generated private key.
@@ -18,13 +18,13 @@ public class GeneratedIntermediateCSRResult {
     public CertificateKeyType privateKeyType;
 
     /**
-     * Generated private key (PEM Encoded).
+     * Generated private key.
      * <p>
      * Only valid if {@link GenerateIntermediateCSROptions#exportPrivateKey} was true.
      */
-    public String privateKey;
+    public PrivateKeyData privateKey;
 
-    public GeneratedIntermediateCSRResult setCsr(String csr) {
+    public GeneratedIntermediateCSRResult setCsr(CSRData csr) {
         this.csr = csr;
         return this;
     }
@@ -34,7 +34,7 @@ public class GeneratedIntermediateCSRResult {
         return this;
     }
 
-    public GeneratedIntermediateCSRResult setPrivateKey(String privateKey) {
+    public GeneratedIntermediateCSRResult setPrivateKey(PrivateKeyData privateKey) {
         this.privateKey = privateKey;
         return this;
     }

@@ -50,6 +50,17 @@ public class GenerateCertificateOptions {
      */
     public String timeToLive;
 
+    /**
+     * Specifies returned format of certificate & private key data. If unspecified it defaults
+     * to {@link DataFormat#PEM}
+     */
+    public DataFormat format;
+
+    /**
+     * Specifies encoding of private key data. If unspecified it defaults to {@link PrivateKeyEncoding#PKCS8}.
+     */
+    public PrivateKeyEncoding privateKeyEncoding;
+
     public GenerateCertificateOptions setSubjectCommonName(String subjectCommonName) {
         this.subjectCommonName = subjectCommonName;
         return this;
@@ -86,6 +97,16 @@ public class GenerateCertificateOptions {
 
     public GenerateCertificateOptions setTimeToLive(String timeToLive) {
         this.timeToLive = timeToLive;
+        return this;
+    }
+
+    public GenerateCertificateOptions setFormat(DataFormat format) {
+        this.format = format;
+        return this;
+    }
+
+    public GenerateCertificateOptions setPrivateKeyEncoding(PrivateKeyEncoding privateKeyEncoding) {
+        this.privateKeyEncoding = privateKeyEncoding;
         return this;
     }
 }

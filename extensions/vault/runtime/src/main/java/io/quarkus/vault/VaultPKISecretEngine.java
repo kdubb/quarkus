@@ -3,6 +3,7 @@ package io.quarkus.vault;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.ConfigCRLOptions;
 import io.quarkus.vault.pki.ConfigURLsOptions;
 import io.quarkus.vault.pki.GenerateCertificateOptions;
@@ -25,11 +26,11 @@ import io.quarkus.vault.pki.TidyOptions;
 public interface VaultPKISecretEngine {
 
     /**
-     * Retrieves the engine's PEM encoded CA certificate.
-     * 
-     * @return PEM encoded certificate authority certificate.
+     * Retrieves the engine's CA certificate (PEM encoded).
+     *
+     * @return Certificate authority certificate.
      */
-    String getCertificateAuthority();
+    CertificateData.PEM getCertificateAuthority();
 
     /**
      * Configures the engine's CA.
@@ -67,16 +68,16 @@ public interface VaultPKISecretEngine {
     ConfigCRLOptions readCRLConfig();
 
     /**
-     * Retrieves the engine's PEM encoded CA chain.
-     * 
-     * @return PEM encoded certificate authority chain.
+     * Retrieves the engine's CA chain (PEM encoded).
+     *
+     * @return Certificate authority chain.
      */
     String getCertificateAuthorityChain();
 
     /**
-     * Retrieves the engine's PEM encoded CRL.
-     * 
-     * @return PEM encoded certificate revocation list.
+     * Retrieves the engine's CRL (PEM encoded).
+     *
+     * @return Certificate revocation list.
      */
     String getCertificateRevocationList();
 
@@ -87,18 +88,18 @@ public interface VaultPKISecretEngine {
 
     /**
      * List all issued certificate serial numbers.
-     * 
+     *
      * @return List of certificate serialize numbers.
      */
     List<String> getCertificates();
 
     /**
-     * Retrieve a specific PEM encoded certificate.
-     * 
+     * Retrieve a specific certificate (PEM encoded).
+     *
      * @param serial Serial number of certificate.
-     * @return PEM encoded certificate or null if no certificate exists.
+     * @return Certificate or null if no certificate exists.
      */
-    String getCertificate(String serial);
+    CertificateData.PEM getCertificate(String serial);
 
     /**
      * Generates a public/private key pair and certificate issued from the engine's CA using the

@@ -137,7 +137,7 @@ public class PKIResource {
         GenerateCertificateOptions options = new GenerateCertificateOptions()
             .setSubjectCommonName(subdomain + ".my-website.com");
         GeneratedCertificate certificate =  pkiSecretEngine.generateCertificate("example-dot-com",  options);
-        return certificate.certificate;
+        return certificate.certificate.getData();
     }
 }
 ----
@@ -163,7 +163,7 @@ Let's add a new method that accepts a CSR:
 public String issue(String csr) {
     GenerateCertificateOptions options = new GenerateCertificateOptions();
     SignedCertificate certificate = pkiSecretEngine.signRequest("example-dot-com", csr, options);
-    return pkiSecretEngine.decrypt("my-encryption-key", cipherText).asString();
+    return certificate.certificate.getData();
 }
 ----
 
@@ -204,19 +204,21 @@ curl -X POST --data '1d:2e:c6:06:45:18:60:0e:23:d6:c5:17:43:c0:fe:46:ed:d1:50:be
 == Dynamically Mounting PKI Engines
 
 Quarkus's Vault PKI support includes that ability to mount & unmount PKI engines dynamically using
-the `VaultPKISecretEngineFactory` interface.
+the `VaultPKISecretEngineFactory` & `VaultSystemBackendEngine` interfaces.
 
-To enable, or mount, a new PKI engine at specific mount path you can use the `enable` method:
+To enable, or mount, a new PKI engine at specific mount path you can use the
+`VaultSystemBackendEngine.enable` method:
 
 [source, java, subs=attributes+]
 ----
-// Obtain factory via injection or other standard CDI method.
+// Obtain interfaces via injection or other standard CDI method.
+VaultSystemBackendEngine systemBackendEngine = ...;
 VaultPKISecretEngineFactory pkiSecretEngineFactory = ...;
 
 // Mount a PKI engine at a specified path.
 EnableEngineOptions options = new EnableEngineOptions()
   .setMaxLeaseTimeToLive("8760h");
-pkiSecretEngineFactory.enable("pki-dyn", "A dynamic PKI engine", options);
+systemBackendEngine.enable(VaultSecretEngine.PKI, "pki-dyn", "A dynamic PKI engine", options);
 
 // Obtain an engine manager for the newly mounted PKI engine.
 VaultPKISecretEngine dynPkiSecretEngine = pkiSecretEngineFactory.engine("pki-dyn");
@@ -226,7 +228,7 @@ To disable (aka unmount) a PKI engine at a specific path you simply use the `dis
 
 [source, java, subs=attributes+]
 ----
-pkiSecretEngineFactory.disable("pki-dyn");
+systemBackendEngine.disable("pki-dyn");
 ----
 
 NOTE: If you want to test if a specific mount path is already in use you can use

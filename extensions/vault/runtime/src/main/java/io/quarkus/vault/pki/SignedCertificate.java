@@ -17,34 +17,34 @@ public class SignedCertificate {
     /**
      * Generated certificate (PEM encoded).
      */
-    public String certificate;
+    public CertificateData certificate;
 
     /**
      * Issuing CA of generated certificate (PEM encoded).
      */
-    public String issuingCA;
+    public CertificateData issuingCA;
 
     /**
      * Complete CA chain of generated certificate (elements are PEM encoded).
      */
-    public List<String> caChain;
+    public List<CertificateData> caChain;
 
     public SignedCertificate setSerialNumber(String serialNumber) {
         this.serialNumber = serialNumber;
         return this;
     }
 
-    public SignedCertificate setCertificate(String certificate) {
+    public SignedCertificate setCertificate(CertificateData certificate) {
         this.certificate = certificate;
         return this;
     }
 
-    public SignedCertificate setIssuingCA(String issuingCA) {
+    public SignedCertificate setIssuingCA(CertificateData issuingCA) {
         this.issuingCA = issuingCA;
         return this;
     }
 
-    public SignedCertificate setCaChain(List<String> caChain) {
+    public SignedCertificate setCaChain(List<CertificateData> caChain) {
         this.caChain = caChain;
         return this;
     }

@@ -13,14 +13,14 @@ public class GeneratedRootCertificate {
     public String serialNumber;
 
     /**
-     * Generated certificate (PEM encoded).
+     * Generated certificate.
      */
-    public String certificate;
+    public CertificateData certificate;
 
     /**
-     * Issuing CA of generated certificate (PEM encoded).
+     * Issuing CA of generated certificate.
      */
-    public String issuingCA;
+    public CertificateData issuingCA;
 
     /**
      * Type of generated private key
@@ -30,19 +30,19 @@ public class GeneratedRootCertificate {
     /**
      * Generated private Key (PEM Encoded).
      */
-    public String privateKey;
+    public PrivateKeyData privateKey;
 
     public GeneratedRootCertificate setSerialNumber(String serialNumber) {
         this.serialNumber = serialNumber;
         return this;
     }
 
-    public GeneratedRootCertificate setCertificate(String certificate) {
+    public GeneratedRootCertificate setCertificate(CertificateData certificate) {
         this.certificate = certificate;
         return this;
     }
 
-    public GeneratedRootCertificate setIssuingCA(String issuingCA) {
+    public GeneratedRootCertificate setIssuingCA(CertificateData issuingCA) {
         this.issuingCA = issuingCA;
         return this;
     }
@@ -52,7 +52,7 @@ public class GeneratedRootCertificate {
         return this;
     }
 
-    public GeneratedRootCertificate setPrivateKey(String privateKey) {
+    public GeneratedRootCertificate setPrivateKey(PrivateKeyData privateKey) {
         this.privateKey = privateKey;
         return this;
     }

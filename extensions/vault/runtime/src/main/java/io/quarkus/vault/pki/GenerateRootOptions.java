@@ -117,6 +117,17 @@ public class GenerateRootOptions {
      */
     public List<String> permittedDnsDomains;
 
+    /**
+     * Specifies returned format of certificate & private key data. If unspecified it defaults
+     * to {@link DataFormat#PEM}
+     */
+    public DataFormat format;
+
+    /**
+     * Specifies encoding of private key data. If unspecified it defaults to {@link PrivateKeyEncoding#PKCS8}.
+     */
+    public PrivateKeyEncoding privateKeyEncoding;
+
     public GenerateRootOptions setSubjectCommonName(String subjectCommonName) {
         this.subjectCommonName = subjectCommonName;
         return this;
@@ -216,6 +227,16 @@ public class GenerateRootOptions {
 
     public GenerateRootOptions setPermittedDnsDomains(List<String> permittedDnsDomains) {
         this.permittedDnsDomains = permittedDnsDomains;
+        return this;
+    }
+
+    public GenerateRootOptions setFormat(DataFormat format) {
+        this.format = format;
+        return this;
+    }
+
+    public GenerateRootOptions setPrivateKeyEncoding(PrivateKeyEncoding privateKeyEncoding) {
+        this.privateKeyEncoding = privateKeyEncoding;
         return this;
     }
 }

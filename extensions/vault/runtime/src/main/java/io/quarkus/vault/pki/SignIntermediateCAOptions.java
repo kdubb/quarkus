@@ -113,6 +113,12 @@ public class SignIntermediateCAOptions {
      */
     public List<String> permittedDnsDomains;
 
+    /**
+     * Specifies returned format of certificate data. If unspecified it defaults
+     * to {@link DataFormat#PEM}
+     */
+    public DataFormat format;
+
     public SignIntermediateCAOptions setSubjectCommonName(String subjectCommonName) {
         this.subjectCommonName = subjectCommonName;
         return this;
@@ -204,6 +210,11 @@ public class SignIntermediateCAOptions {
 
     public SignIntermediateCAOptions setPermittedDnsDomains(List<String> permittedDnsDomains) {
         this.permittedDnsDomains = permittedDnsDomains;
+        return this;
+    }
+
+    public SignIntermediateCAOptions setFormat(DataFormat format) {
+        this.format = format;
         return this;
     }
 }

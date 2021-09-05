@@ -45,11 +45,13 @@ import org.testcontainers.shaded.org.bouncycastle.openssl.PEMParser;
 import org.testcontainers.shaded.org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import io.quarkus.test.QuarkusUnitTest;
+import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.CertificateExtendedKeyUsage;
 import io.quarkus.vault.pki.CertificateKeyType;
 import io.quarkus.vault.pki.CertificateKeyUsage;
 import io.quarkus.vault.pki.ConfigCRLOptions;
 import io.quarkus.vault.pki.ConfigURLsOptions;
+import io.quarkus.vault.pki.DataFormat;
 import io.quarkus.vault.pki.GenerateCertificateOptions;
 import io.quarkus.vault.pki.GenerateIntermediateCSROptions;
 import io.quarkus.vault.pki.GenerateRootOptions;
@@ -121,15 +123,29 @@ public class VaultPKIITCase {
         options.timeToLive = "8760h";
         options.keyType = CertificateKeyType.EC;
         options.keyBits = 256;
+        options.exportPrivateKey = true;
         options.maxPathLength = 3;
         options.permittedDnsDomains = asList("subs1.example.com", "subs2.example.com");
 
         GeneratedRootCertificate result = pkiSecretEngine.generateRoot(options);
 
-        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(new StringReader(result.certificate))
-                .readObject();
-        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(new StringReader(result.issuingCA))
-                .readObject();
+        assertEquals(DataFormat.PEM, result.certificate.getFormat());
+        assertNotNull(result.certificate.getData());
+        assertFalse(result.certificate.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.certificate.getCertificate());
+
+        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.certificate.getData()))
+                        .readObject();
+
+        assertEquals(DataFormat.PEM, result.issuingCA.getFormat());
+        assertNotNull(result.issuingCA.getData());
+        assertFalse(result.issuingCA.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.issuingCA.getCertificate());
+
+        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.issuingCA.getData()))
+                        .readObject();
 
         // Check all subject name component options
         assertEquals(
@@ -178,6 +194,14 @@ public class VaultPKIITCase {
         // Check returned a serial number
         assertNotNull(result.serialNumber);
         assertFalse(result.serialNumber.isEmpty());
+
+        // Check private key
+        assertNotNull(result.privateKey);
+        assertEquals(DataFormat.PEM, result.privateKey.getFormat());
+        assertTrue(result.privateKey.isPKCS8());
+        assertNotNull(result.privateKey.getData());
+        assertFalse(result.privateKey.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.privateKey.getKeySpec());
     }
 
     @Test
@@ -210,10 +234,16 @@ public class VaultPKIITCase {
         options.excludeCommonNameFromSubjectAlternativeNames = true;
         options.keyType = CertificateKeyType.EC;
         options.keyBits = 256;
+        options.exportPrivateKey = true;
 
         GeneratedIntermediateCSRResult result = pkiSecretEngine.generateIntermediateCSR(options);
 
-        PKCS10CertificationRequest csr = (PKCS10CertificationRequest) new PEMParser(new StringReader(result.csr)).readObject();
+        assertEquals(DataFormat.PEM, result.csr.getFormat());
+        assertNotNull(result.csr.getData());
+        assertFalse(result.csr.getData().toString().isEmpty());
+
+        PKCS10CertificationRequest csr = (PKCS10CertificationRequest) new PEMParser(
+                new StringReader((String) result.csr.getData())).readObject();
         // Check all subject name component options
         assertEquals(
                 "C=USA,ST=NY,L=New York,STREET=123 Main Street,PostalCode=10030," +
@@ -240,6 +270,14 @@ public class VaultPKIITCase {
 
         // Check keyBits option
         assertEquals(65, subPKI.getPublicKeyData().getOctets().length);
+
+        // Check private key
+        assertNotNull(result.privateKey);
+        assertEquals(DataFormat.PEM, result.privateKey.getFormat());
+        assertTrue(result.privateKey.isPKCS8());
+        assertNotNull(result.privateKey.getData());
+        assertFalse(result.privateKey.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.privateKey.getKeySpec());
     }
 
     @Test
@@ -281,12 +319,19 @@ public class VaultPKIITCase {
         options.permittedDnsDomains = asList("subs1.example.com", "subs2.example.com");
         options.useCSRValues = false;
 
-        SignedCertificate result = pkiSecretEngine.signIntermediateCA(csrResult.csr, options);
+        SignedCertificate result = pkiSecretEngine.signIntermediateCA((String) csrResult.csr.getData(), options);
 
-        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(new StringReader(result.certificate))
-                .readObject();
-        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(new StringReader(result.issuingCA))
-                .readObject();
+        assertEquals(DataFormat.PEM, result.certificate.getFormat());
+        assertNotNull(result.certificate.getData());
+        assertFalse(result.certificate.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.certificate.getCertificate());
+
+        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.certificate.getData()))
+                        .readObject();
+        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.issuingCA.getData()))
+                        .readObject();
 
         // Check all subject name component options
         assertEquals(
@@ -353,18 +398,22 @@ public class VaultPKIITCase {
         genIntCSROptions.subjectCommonName = "test1.example.com";
 
         GeneratedIntermediateCSRResult csrResult = pkiSecretEngine2.generateIntermediateCSR(genIntCSROptions);
+
         assertNotNull(csrResult.csr);
+        assertEquals(DataFormat.PEM, csrResult.csr.getFormat());
+        assertNotNull(csrResult.csr.getData());
+        assertFalse(csrResult.csr.getData().toString().isEmpty());
 
         // Sign the intermediate CA using "pki"
         SignIntermediateCAOptions options = new SignIntermediateCAOptions();
-        SignedCertificate result = pkiSecretEngine.signIntermediateCA(csrResult.csr, options);
+        SignedCertificate result = pkiSecretEngine.signIntermediateCA((String) csrResult.csr.getData(), options);
 
         // Set signed intermediate CA into "pki2"
-        pkiSecretEngine2.setSignedIntermediateCA(result.certificate);
+        pkiSecretEngine2.setSignedIntermediateCA((String) result.certificate.getData());
 
         // Get CA cert and check subject
         X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
-                new StringReader(pkiSecretEngine2.getCertificateAuthority())).readObject();
+                new StringReader(pkiSecretEngine2.getCertificateAuthority().getData())).readObject();
 
         assertEquals("CN=test1.example.com", certificate.getSubject().toString());
     }
@@ -513,10 +562,23 @@ public class VaultPKIITCase {
 
         GeneratedCertificate result = pkiSecretEngine.generateCertificate("test", options);
 
-        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(new StringReader(result.certificate))
-                .readObject();
-        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(new StringReader(result.issuingCA))
-                .readObject();
+        assertEquals(DataFormat.PEM, result.certificate.getFormat());
+        assertNotNull(result.certificate.getData());
+        assertFalse(result.certificate.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.certificate.getCertificate());
+
+        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.certificate.getData()))
+                        .readObject();
+
+        assertEquals(DataFormat.PEM, result.issuingCA.getFormat());
+        assertNotNull(result.issuingCA.getData());
+        assertFalse(result.issuingCA.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.issuingCA.getCertificate());
+
+        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.issuingCA.getData()))
+                        .readObject();
 
         // Check all subject name component options
         assertEquals("CN=test.example.com", certificate.getSubject().toString());
@@ -545,9 +607,93 @@ public class VaultPKIITCase {
         // Check returned a private key type
         assertEquals(CertificateKeyType.RSA, result.privateKeyType);
 
-        // Check returned a private key
+        // Check returned private key
         assertNotNull(result.privateKey);
-        assertFalse(result.privateKey.isEmpty());
+        assertEquals(DataFormat.PEM, result.privateKey.getFormat());
+        assertTrue(result.privateKey.isPKCS8());
+        assertNotNull(result.privateKey.getData());
+        assertFalse(result.privateKey.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.privateKey.getKeySpec());
+    }
+
+    @Test
+    public void testGenerateCertificateDer() throws Exception {
+        // Generate root
+        GenerateRootOptions generateRootOptions = new GenerateRootOptions();
+        generateRootOptions.subjectCommonName = "root.example.com";
+        generateRootOptions.timeToLive = "24h";
+        assertNotNull(pkiSecretEngine.generateRoot(generateRootOptions).certificate);
+
+        // Generate role
+        RoleOptions roleOptions = new RoleOptions();
+        roleOptions.allowedDomains = singletonList("example.com");
+        roleOptions.allowSubdomains = true;
+        roleOptions.allowIpSubjectAlternativeNames = true;
+        roleOptions.allowedUriSubjectAlternativeNames = singletonList("ex:*");
+        roleOptions.allowedOtherSubjectAlternativeNames = singletonList("1.3.6.1.4.1.311.20.2.3;UTF8:*");
+        pkiSecretEngine.updateRole("test", roleOptions);
+
+        // Test cert generation
+        GenerateCertificateOptions options = new GenerateCertificateOptions();
+        options.subjectCommonName = "test.example.com";
+        options.subjectAlternativeNames = singletonList("alt.example.com");
+        options.ipSubjectAlternativeNames = singletonList("1.2.3.4");
+        options.uriSubjectAlternativeNames = singletonList("ex:12345");
+        options.otherSubjectAlternativeNames = singletonList("1.3.6.1.4.1.311.20.2.3;UTF8:test");
+        options.excludeCommonNameFromSubjectAlternativeNames = true;
+        options.timeToLive = "333m";
+        options.format = DataFormat.DER;
+
+        GeneratedCertificate result = pkiSecretEngine.generateCertificate("test", options);
+
+        assertEquals(DataFormat.DER, result.certificate.getFormat());
+        assertNotNull(result.certificate.getData());
+        assertFalse(result.certificate.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.certificate.getCertificate());
+
+        X509CertificateHolder certificate = new X509CertificateHolder((byte[]) result.certificate.getData());
+
+        assertEquals(DataFormat.DER, result.issuingCA.getFormat());
+        assertNotNull(result.issuingCA.getData());
+        assertFalse(result.issuingCA.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.issuingCA.getCertificate());
+
+        X509CertificateHolder issuingCA = new X509CertificateHolder((byte[]) result.issuingCA.getData());
+
+        // Check all subject name component options
+        assertEquals("CN=test.example.com", certificate.getSubject().toString());
+
+        // Check subjectAlternativeNames, ipSubjectAlternativeNames, uriSubjectAlternativeNames,
+        // otherSubjectAlternativeNames & excludeCommonNameFromSubjectAlternativeNames options
+        assertNotNull(certificate.getExtension(subjectAlternativeName));
+        GeneralNames generalNames = GeneralNames.getInstance(certificate.getExtension(subjectAlternativeName).getParsedValue());
+        List<String> subjectAlternativeNames = Arrays.stream(generalNames.getNames())
+                .map(GeneralName::getName)
+                .map(ASN1Encodable::toString)
+                .collect(toList());
+        assertEquals(asList("[1.3.6.1.4.1.311.20.2.3, [0]test]", "alt.example.com", "#01020304", "ex:12345"),
+                subjectAlternativeNames);
+
+        // Check timeToLive option
+        assertEquals(332, Duration.between(Instant.now().plusSeconds(30), certificate.getNotAfter().toInstant()).toMinutes());
+
+        // Check returned cert is not self-signed
+        assertNotEquals(certificate.getSubject(), issuingCA.getSubject());
+
+        // Check returned a serial number
+        assertNotNull(result.serialNumber);
+        assertFalse(result.serialNumber.isEmpty());
+
+        // Check returned a private key type
+        assertEquals(CertificateKeyType.RSA, result.privateKeyType);
+
+        // Check returned private key
+        assertNotNull(result.privateKey);
+        assertEquals(DataFormat.DER, result.privateKey.getFormat());
+        assertTrue(result.privateKey.isPKCS8());
+        assertNotNull(result.privateKey.getData());
+        assertFalse(result.privateKey.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.privateKey.getKeySpec());
     }
 
     @Test
@@ -601,10 +747,17 @@ public class VaultPKIITCase {
 
         SignedCertificate result = pkiSecretEngine.signRequest("test", pemCSR, options);
 
-        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(new StringReader(result.certificate))
-                .readObject();
-        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(new StringReader(result.issuingCA))
-                .readObject();
+        assertEquals(DataFormat.PEM, result.certificate.getFormat());
+        assertNotNull(result.certificate.getData());
+        assertFalse(result.certificate.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> result.certificate.getCertificate());
+
+        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.certificate.getData()))
+                        .readObject();
+        X509CertificateHolder issuingCA = (X509CertificateHolder) new PEMParser(
+                new StringReader((String) result.issuingCA.getData()))
+                        .readObject();
 
         // Check all subject name component options
         assertEquals("CN=test.example.com", certificate.getSubject().toString());
@@ -651,9 +804,14 @@ public class VaultPKIITCase {
         String certSerialNumber = pkiSecretEngine.generateCertificate("test", options).serialNumber;
 
         // Test get cert
-        String pemCert = pkiSecretEngine.getCertificate(certSerialNumber);
+        CertificateData.PEM pemCert = pkiSecretEngine.getCertificate(certSerialNumber);
         assertNotNull(pemCert);
-        assertDoesNotThrow(() -> new PEMParser(new StringReader(pemCert)).readObject());
+
+        assertEquals(DataFormat.PEM, pemCert.getFormat());
+        assertNotNull(pemCert.getData());
+        assertFalse(pemCert.getData().isEmpty());
+        assertDoesNotThrow(() -> new PEMParser(new StringReader(pemCert.getData())).readObject());
+        assertDoesNotThrow(pemCert::getCertificate);
     }
 
     @Test
@@ -764,10 +922,11 @@ public class VaultPKIITCase {
 
         // Sign the intermediate CA using "pki"
         SignIntermediateCAOptions options = new SignIntermediateCAOptions();
-        SignedCertificate result = pkiSecretEngine.signIntermediateCA(csrResult.csr, options);
+        SignedCertificate result = pkiSecretEngine.signIntermediateCA((String) csrResult.csr.getData(), options);
 
         // Set signed intermediate CA & root CA chain into "pki2"
-        pkiSecretEngine2.setSignedIntermediateCA(result.certificate + "\n" + generatedRootCertificate.certificate);
+        pkiSecretEngine2
+                .setSignedIntermediateCA(result.certificate.getData() + "\n" + generatedRootCertificate.certificate.getData());
 
         // Get CA chain and check subjects
         PEMParser pemParser = new PEMParser(new StringReader(pkiSecretEngine2.getCertificateAuthorityChain()));
@@ -786,17 +945,34 @@ public class VaultPKIITCase {
         genRootOptions.subjectCommonName = "root.example.com";
         genRootOptions.exportPrivateKey = true;
         GeneratedRootCertificate generatedRootCertificate = pkiSecretEngine.generateRoot(genRootOptions);
+
         assertNotNull(generatedRootCertificate.certificate);
+        assertEquals(DataFormat.PEM, generatedRootCertificate.certificate.getFormat());
+        assertNotNull(generatedRootCertificate.certificate.getData());
+        assertFalse(generatedRootCertificate.certificate.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> generatedRootCertificate.certificate.getCertificate());
+
+        assertNotNull(generatedRootCertificate.issuingCA);
+        assertEquals(DataFormat.PEM, generatedRootCertificate.issuingCA.getFormat());
+        assertNotNull(generatedRootCertificate.issuingCA.getData());
+        assertFalse(generatedRootCertificate.issuingCA.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> generatedRootCertificate.issuingCA.getCertificate());
+
         assertNotNull(generatedRootCertificate.privateKey);
+        assertEquals(DataFormat.PEM, generatedRootCertificate.privateKey.getFormat());
+        assertNotNull(generatedRootCertificate.privateKey.getData());
+        assertFalse(generatedRootCertificate.privateKey.getData().toString().isEmpty());
+        assertDoesNotThrow(() -> generatedRootCertificate.privateKey.getKeySpec());
 
         // Set root CA from "pki" into "pki2"
         VaultPKISecretEngine pkiSecretEngine2 = pkiSecretEngineFactory.engine("pki2");
         pkiSecretEngine2
-                .configCertificateAuthority(generatedRootCertificate.certificate + "\n" + generatedRootCertificate.privateKey);
+                .configCertificateAuthority(
+                        generatedRootCertificate.certificate.getData() + "\n" + generatedRootCertificate.privateKey.getData());
 
         // Get CA cert and check subject
         X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
-                new StringReader(pkiSecretEngine2.getCertificateAuthority())).readObject();
+                new StringReader(pkiSecretEngine2.getCertificateAuthority().getData())).readObject();
 
         assertEquals("CN=root.example.com", certificate.getSubject().toString());
     }
