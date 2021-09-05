@@ -14,7 +14,7 @@ include::./attributes.adoc[]
 
 Vault's PKI Secret Engine generates dynamic X.509 certificates. It allows services to get certificates without
 manually generating a private key and CSR, submitting to a CA, and waiting for signed certificate. The PKI secret
-engine allows generating certificates advantages over classic CA scenarios:
+engine allows dynamically generating certificates, which has the following advantages over classic CA scenarios:
 
 * Generating certificates with short TTLs reduces the need for and/or size of CRLs.
 * Allows for ephemeral certificates that are generated upon application startup, stored in memory and discarded on shutdown.
@@ -77,7 +77,7 @@ NOTE: CA configuration can be done programmatically using `VaultPKISecretEngine.
 With the CA configured we now require a role to be defined that determines what parameters are allowed when
 generating certificates.
 
-Here we create a role `example-dot-com` that allows cetificates with the common name
+Here we create a role `example-dot-com` that allows certificates with the common name
 allowed to be any subdomain of `my-website.com`.
 
 [source,bash, subs=attributes+]
