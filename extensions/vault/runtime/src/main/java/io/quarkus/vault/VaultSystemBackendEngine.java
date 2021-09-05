@@ -3,10 +3,12 @@ package io.quarkus.vault;
 import java.util.List;
 
 import io.quarkus.vault.runtime.config.VaultBootstrapConfig;
+import io.quarkus.vault.sys.EnableEngineOptions;
 import io.quarkus.vault.sys.VaultHealth;
 import io.quarkus.vault.sys.VaultHealthStatus;
 import io.quarkus.vault.sys.VaultInit;
 import io.quarkus.vault.sys.VaultSealStatus;
+import io.quarkus.vault.sys.VaultSecretEngine;
 import io.quarkus.vault.sys.VaultTuneInfo;
 
 /**
@@ -94,7 +96,6 @@ public interface VaultSystemBackendEngine {
      *
      * @param mount Name of the mount
      * @param tuneInfo Tune info with fields to update
-     * @return updated tune info
      */
     void updateTuneInfo(String mount, VaultTuneInfo tuneInfo);
 
@@ -105,4 +106,32 @@ public interface VaultSystemBackendEngine {
      * @return True if an engine is mounted, false otherwise
      */
     boolean isEngineMounted(String mount);
+
+    /**
+     * Enables a secret engine at a specific mount.
+     *
+     * @param engine Type of engine to mount.
+     * @param mount Engine mount path.
+     * @param description Human friendly description of mount point.
+     * @param options Engine options.
+     */
+    void enable(VaultSecretEngine engine, String mount, String description, EnableEngineOptions options);
+
+    /**
+     * Enables a secret engine at a specific mount.
+     *
+     * @param engineType Type of engine to mount.
+     * @param mount Engine mount path.
+     * @param description Human friendly description of mount point.
+     * @param options Engine options.
+     */
+    void enable(String engineType, String mount, String description, EnableEngineOptions options);
+
+    /**
+     * Disables the engine at a specific mount.
+     *
+     * @param mount Engine mount path.
+     */
+    void disable(String mount);
+
 }

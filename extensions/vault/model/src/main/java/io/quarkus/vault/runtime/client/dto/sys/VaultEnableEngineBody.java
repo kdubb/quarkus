@@ -1,5 +1,7 @@
 package io.quarkus.vault.runtime.client.dto.sys;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class VaultEnableEngineBody {
@@ -19,5 +21,7 @@ public class VaultEnableEngineBody {
     public String description = "";
 
     public Config config;
+
+    public Map<String, String> options;
 
 }

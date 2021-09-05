@@ -50,7 +50,6 @@ import io.quarkus.vault.pki.CertificateKeyType;
 import io.quarkus.vault.pki.CertificateKeyUsage;
 import io.quarkus.vault.pki.ConfigCRLOptions;
 import io.quarkus.vault.pki.ConfigURLsOptions;
-import io.quarkus.vault.pki.EnableEngineOptions;
 import io.quarkus.vault.pki.GenerateCertificateOptions;
 import io.quarkus.vault.pki.GenerateIntermediateCSROptions;
 import io.quarkus.vault.pki.GenerateRootOptions;
@@ -75,9 +74,6 @@ public class VaultPKIITCase {
     @Inject
     VaultPKISecretEngineFactory pkiSecretEngineFactory;
 
-    @Inject
-    VaultSystemBackendEngine systemBackendEngine;
-
     @AfterEach
     public void cleanup() {
         try {
@@ -100,12 +96,6 @@ public class VaultPKIITCase {
                     // ignore
                 }
             }
-        } catch (Throwable x) {
-            // ignore
-        }
-
-        try {
-            pkiSecretEngineFactory.disable("pki-dyn");
         } catch (Throwable x) {
             // ignore
         }
@@ -867,19 +857,5 @@ public class VaultPKIITCase {
         options.tidyRevokedCerts = true;
         options.safetyBuffer = "24h";
         assertDoesNotThrow(() -> pkiSecretEngine.tidy(options));
-    }
-
-    @Test
-    public void testEnableDisable() {
-        assertFalse(systemBackendEngine.isEngineMounted("pki-dyn"));
-
-        EnableEngineOptions options = new EnableEngineOptions();
-        assertDoesNotThrow(() -> pkiSecretEngineFactory.enable("pki-dyn", "Dynamic test engine", options));
-
-        assertTrue(systemBackendEngine.isEngineMounted("pki-dyn"));
-
-        assertDoesNotThrow(() -> pkiSecretEngineFactory.disable("pki-dyn"));
-
-        assertFalse(systemBackendEngine.isEngineMounted("pki-dyn"));
     }
 }
