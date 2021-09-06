@@ -119,7 +119,7 @@ quarkus.vault.authentication.userpass.username=bob
 quarkus.vault.authentication.userpass.password=sinclair
 ----
 
-We can then add a new endpoint that will allow us to issue a certificate using the configured CA & role:
+We can then add a new endpoint that will allow us to generate a certificate using the configured CA & role:
 
 [source, java, subs=attributes+]
 ----
@@ -136,13 +136,13 @@ public class PKIResource {
     public String generate(String subdomain) {
         GenerateCertificateOptions options = new GenerateCertificateOptions()
             .setSubjectCommonName(subdomain + ".my-website.com");
-        GeneratedCertificate certificate =  pkiSecretEngine.generateCertificate("example-dot-com",  options);
-        return certificate.certificate.getData();
+        GeneratedCertificate generated =  pkiSecretEngine.generateCertificate("example-dot-com",  options);
+        return generated.certificate.getData();
     }
 }
 ----
 
-After compiling and starting the Quarkus application, let's issue a new certificate with a generated key pair:
+After compiling and starting the Quarkus application, let's generate a new certificate with a generated key pair:
 [source,bash, subs=attributes+]
 ----
 curl -X POST --data 'a-subdomain' --header "Content-Type: text/plain"  http://localhost:8080/pki/generate
@@ -152,29 +152,29 @@ curl -X POST --data 'a-subdomain' --header "Content-Type: text/plain"  http://lo
 # ==> -----END CERTIFICATE-----
 ----
 
-Alternatively we can generate a key pair and CSR locally and issue a certificate by having vault sign our CSR.
+Alternatively we can generate a key pair and CSR locally and generate a certificate by having vault sign our CSR.
 
 Let's add a new method that accepts a CSR:
 
 [source, java, subs=attributes+]
 ----
 @POST
-@Path("/issue")
-public String issue(String csr) {
+@Path("/sign")
+public String sign(String csr) {
     GenerateCertificateOptions options = new GenerateCertificateOptions();
-    SignedCertificate certificate = pkiSecretEngine.signRequest("example-dot-com", csr, options);
-    return certificate.certificate.getData();
+    SignedCertificate signed = pkiSecretEngine.signRequest("example-dot-com", csr, options);
+    return signed.certificate.getData();
 }
 ----
 
-Now we can generate a CSR (e.g. using OpenSSL) and pass it to our `/issue` endpoint to issue a certificate from
-the CSR:
+Now we can generate a CSR (e.g. using OpenSSL) and pass it to our `/sign` endpoint to sign and generate a
+certificate from the CSR:
 
 [source,bash, subs=attributes+]
 ----
 openssl req -newkey rsa:2048 -keyout example.key -out example.csr
 
-curl -X POST --data @example.csr --header "Content-Type: text/plain"  http://localhost:8080/pki/issue
+curl -X POST --data @example.csr --header "Content-Type: text/plain"  http://localhost:8080/pki/sign
 
 # ==> -----BEGIN CERTIFICATE-----
 # ==> ...
@@ -222,9 +222,12 @@ systemBackendEngine.enable(VaultSecretEngine.PKI, "pki-dyn", "A dynamic PKI engi
 
 // Obtain an engine manager for the newly mounted PKI engine.
 VaultPKISecretEngine dynPkiSecretEngine = pkiSecretEngineFactory.engine("pki-dyn");
+
+// Use dynamically created engine as you please.
+dynPkiSecretEngine.generateRoot(new GenerateRootOptions());
 ----
 
-To disable (aka unmount) a PKI engine at a specific path you simply use the `disable` method:
+To disable (aka unmount) a PKI engine at a specific path you simply use the `VaultSystemBackendEngine.disable` method:
 
 [source, java, subs=attributes+]
 ----
@@ -242,6 +245,6 @@ engine are supported, including:
 
  * Provisioning roles used to generate certificates.
  * Storing the root CA externally and issuing certificates from intermediate CAs.
- * Reading current CRLs for each provisioned engine.
+ * Reading current CRLs for each provisioned engine instance.
 
 Feel free to look at the `VaultPKISecretEngine` & `VaultPKISecretEngineFactory` interfaces.
