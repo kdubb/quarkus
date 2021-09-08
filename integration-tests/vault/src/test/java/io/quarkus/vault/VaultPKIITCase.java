@@ -45,6 +45,7 @@ import org.testcontainers.shaded.org.bouncycastle.openssl.PEMParser;
 import org.testcontainers.shaded.org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import io.quarkus.test.QuarkusUnitTest;
+import io.quarkus.vault.pki.CRLData;
 import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.CertificateExtendedKeyUsage;
 import io.quarkus.vault.pki.CertificateKeyType;
@@ -411,7 +412,7 @@ public class VaultPKIITCase {
         // Set signed intermediate CA into "pki2"
         pkiSecretEngine2.setSignedIntermediateCA((String) result.certificate.getData());
 
-        // Get CA cert and check subject
+        // Get CA cert and check subject (PEM)
         X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
                 new StringReader(pkiSecretEngine2.getCertificateAuthority().getData())).readObject();
 
@@ -886,9 +887,13 @@ public class VaultPKIITCase {
         // Revoke cert
         pkiSecretEngine.revokeCertificate(certSerialNumber);
 
-        // Test CRL get
-        String pemCRL = pkiSecretEngine.getCertificateRevocationList();
-        assertDoesNotThrow(() -> (X509CRLHolder) new PEMParser(new StringReader(pemCRL)).readObject());
+        // Test CRL get (PEM)
+        CRLData.PEM pemCRL = pkiSecretEngine.getCertificateRevocationList();
+        assertDoesNotThrow(() -> (X509CRLHolder) new PEMParser(new StringReader(pemCRL.getData())).readObject());
+
+        // Test CRL get (DER)
+        CRLData.DER derCRL = (CRLData.DER) pkiSecretEngine.getCertificateRevocationList(DataFormat.DER);
+        assertDoesNotThrow(() -> new X509CRLHolder(derCRL.getData()));
     }
 
     @Test
@@ -970,11 +975,13 @@ public class VaultPKIITCase {
                 .configCertificateAuthority(
                         generatedRootCertificate.certificate.getData() + "\n" + generatedRootCertificate.privateKey.getData());
 
-        // Get CA cert and check subject
-        X509CertificateHolder certificate = (X509CertificateHolder) new PEMParser(
-                new StringReader(pkiSecretEngine2.getCertificateAuthority().getData())).readObject();
+        // Get CA cert and check subject (PEM)
+        CertificateData.PEM pemCAData = pkiSecretEngine2.getCertificateAuthority();
+        assertEquals("CN=root.example.com", pemCAData.getCertificate().getSubjectX500Principal().toString());
 
-        assertEquals("CN=root.example.com", certificate.getSubject().toString());
+        // Get CA cert and check subject (DER)
+        CertificateData.DER derCAData = (CertificateData.DER) pkiSecretEngine2.getCertificateAuthority(DataFormat.DER);
+        assertEquals("CN=root.example.com", derCAData.getCertificate().getSubjectX500Principal().toString());
     }
 
     @Test

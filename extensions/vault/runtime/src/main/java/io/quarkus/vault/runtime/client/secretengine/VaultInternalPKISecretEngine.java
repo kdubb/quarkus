@@ -27,12 +27,30 @@ import io.quarkus.vault.runtime.client.dto.pki.VaultPKISignCertificateRequestBod
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKISignCertificateRequestResult;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKISignIntermediateCABody;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKITidyBody;
+import io.vertx.mutiny.core.buffer.Buffer;
 
 @Singleton
 public class VaultInternalPKISecretEngine extends VaultInternalBase {
 
     private String getPath(String mount, String path) {
         return mount + "/" + path;
+    }
+
+    public Buffer getCertificateAuthority(String token, String mount, String format) {
+        return getRaw(token, mount, "ca", format);
+    }
+
+    public Buffer getCertificateRevocationList(String token, String mount, String format) {
+        return getRaw(token, mount, "crl", format);
+    }
+
+    public Buffer getCertificateAuthorityChain(String token, String mount) {
+        return getRaw(token, mount, "ca_chain", null);
+    }
+
+    private Buffer getRaw(String token, String mount, String path, String format) {
+        String suffix = format != null ? "/" + format : "";
+        return vaultClient.get(getPath(mount, path + suffix), token);
     }
 
     public VaultPKICertificateResult getCertificate(String token, String mount, String serial) {

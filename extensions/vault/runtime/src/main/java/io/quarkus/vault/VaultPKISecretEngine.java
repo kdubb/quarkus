@@ -3,9 +3,11 @@ package io.quarkus.vault;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import io.quarkus.vault.pki.CRLData;
 import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.ConfigCRLOptions;
 import io.quarkus.vault.pki.ConfigURLsOptions;
+import io.quarkus.vault.pki.DataFormat;
 import io.quarkus.vault.pki.GenerateCertificateOptions;
 import io.quarkus.vault.pki.GenerateIntermediateCSROptions;
 import io.quarkus.vault.pki.GenerateRootOptions;
@@ -31,6 +33,14 @@ public interface VaultPKISecretEngine {
      * @return Certificate authority certificate.
      */
     CertificateData.PEM getCertificateAuthority();
+
+    /**
+     * Retrieves the engine's CA certificate.
+     *
+     * @param format Format of the returned certificate data.
+     * @return Certificate authority certificate.
+     */
+    CertificateData getCertificateAuthority(DataFormat format);
 
     /**
      * Configures the engine's CA.
@@ -79,7 +89,15 @@ public interface VaultPKISecretEngine {
      *
      * @return Certificate revocation list.
      */
-    String getCertificateRevocationList();
+    CRLData.PEM getCertificateRevocationList();
+
+    /**
+     * Retrieves the engine's CRL.
+     *
+     * @param format Format of the returned crl data.
+     * @return Certificate revocation list.
+     */
+    CRLData getCertificateRevocationList(DataFormat format);
 
     /**
      * Forces a rotation of the associated CRL.

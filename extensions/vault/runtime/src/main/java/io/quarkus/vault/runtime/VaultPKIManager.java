@@ -5,6 +5,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -17,6 +18,7 @@ import javax.inject.Inject;
 
 import io.quarkus.vault.VaultException;
 import io.quarkus.vault.VaultPKISecretEngine;
+import io.quarkus.vault.pki.CRLData;
 import io.quarkus.vault.pki.CSRData;
 import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.CertificateExtendedKeyUsage;
@@ -69,6 +71,7 @@ import io.quarkus.vault.runtime.client.dto.pki.VaultPKISignCertificateRequestRes
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKISignIntermediateCABody;
 import io.quarkus.vault.runtime.client.dto.pki.VaultPKITidyBody;
 import io.quarkus.vault.runtime.client.secretengine.VaultInternalPKISecretEngine;
+import io.vertx.mutiny.core.buffer.Buffer;
 
 @ApplicationScoped
 public class VaultPKIManager implements VaultPKISecretEngine {
@@ -99,10 +102,22 @@ public class VaultPKIManager implements VaultPKISecretEngine {
 
     @Override
     public CertificateData.PEM getCertificateAuthority() {
-        VaultPKICertificateResult internalResult = vaultInternalPKISecretEngine.getCertificate(getToken(), mount, "ca");
-        checkDataValid(internalResult);
+        return (CertificateData.PEM) getCertificateAuthority(DataFormat.PEM);
+    }
 
-        return new CertificateData.PEM(internalResult.data.certificate);
+    @Override
+    public CertificateData getCertificateAuthority(DataFormat format) {
+        String vaultFormat = format == DataFormat.PEM ? format.name().toLowerCase(Locale.ROOT) : null;
+        Buffer data = vaultInternalPKISecretEngine.getCertificateAuthority(getToken(), mount, vaultFormat);
+
+        switch (format) {
+            case PEM:
+                return new CertificateData.PEM(data.toString(StandardCharsets.UTF_8));
+            case DER:
+                return new CertificateData.DER(data.getBytes());
+            default:
+                throw new VaultException("Unsupported Data Format");
+        }
     }
 
     @Override
@@ -160,18 +175,29 @@ public class VaultPKIManager implements VaultPKISecretEngine {
 
     @Override
     public String getCertificateAuthorityChain() {
-        VaultPKICertificateResult internalResult = vaultInternalPKISecretEngine.getCertificate(getToken(), mount, "ca_chain");
-        checkDataValid(internalResult);
+        Buffer data = vaultInternalPKISecretEngine.getCertificateAuthorityChain(getToken(), mount);
 
-        return internalResult.data.certificate;
+        return data.toString(StandardCharsets.UTF_8);
     }
 
     @Override
-    public String getCertificateRevocationList() {
-        VaultPKICertificateResult internalResult = vaultInternalPKISecretEngine.getCertificate(getToken(), mount, "crl");
-        checkDataValid(internalResult);
+    public CRLData.PEM getCertificateRevocationList() {
+        return (CRLData.PEM) getCertificateRevocationList(DataFormat.PEM);
+    }
 
-        return internalResult.data.certificate;
+    @Override
+    public CRLData getCertificateRevocationList(DataFormat format) {
+        String vaultFormat = format == DataFormat.PEM ? format.name().toLowerCase(Locale.ROOT) : null;
+        Buffer data = vaultInternalPKISecretEngine.getCertificateRevocationList(getToken(), mount, vaultFormat);
+
+        switch (format) {
+            case PEM:
+                return new CRLData.PEM(data.toString(StandardCharsets.UTF_8));
+            case DER:
+                return new CRLData.DER(data.getBytes());
+            default:
+                throw new VaultException("Unsupported Data Format");
+        }
     }
 
     @Override
