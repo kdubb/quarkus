@@ -1,9 +1,10 @@
 package io.quarkus.vault.pki;
 
-import java.security.cert.CRLException;
-import java.security.cert.X509CRL;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.List;
 
-public interface CRLData {
+public interface CAChainData {
 
     /**
      * Format of {@link #getData()} property.
@@ -18,14 +19,14 @@ public interface CRLData {
     Object getData();
 
     /**
-     * Parse and generate {@link java.security.cert.X509CRL} from {@link #getData()}.
+     * Parse and generate {@link java.security.cert.X509Certificate}s from {@link #getData()}.
      */
-    X509CRL getCRL() throws CRLException;
+    List<X509Certificate> getCertificates() throws CertificateException;
 
     /**
-     * {@link DataFormat#DER} implementation of {@link CRLData}
+     * {@link DataFormat#DER} implementation of {@link CAChainData}
      */
-    class DER implements CRLData {
+    class DER implements CAChainData {
 
         private final byte[] derData;
 
@@ -44,15 +45,15 @@ public interface CRLData {
         }
 
         @Override
-        public X509CRL getCRL() throws CRLException {
-            return X509Parsing.parseDERCRL(derData);
+        public List<X509Certificate> getCertificates() throws CertificateException {
+            return X509Parsing.parseDERCertificates(derData);
         }
     }
 
     /**
-     * {@link DataFormat#PEM} implementation of {@link CRLData}
+     * {@link DataFormat#PEM} implementation of {@link CAChainData}
      */
-    class PEM implements CRLData {
+    class PEM implements CAChainData {
 
         private final String pemData;
 
@@ -71,8 +72,8 @@ public interface CRLData {
         }
 
         @Override
-        public X509CRL getCRL() throws CRLException {
-            return X509Parsing.parsePEMCRL(pemData);
+        public List<X509Certificate> getCertificates() throws CertificateException {
+            return X509Parsing.parsePEMCertificates(pemData);
         }
     }
 

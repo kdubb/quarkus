@@ -17,6 +17,7 @@ import static org.testcontainers.shaded.org.bouncycastle.asn1.x509.Extension.sub
 
 import java.io.StringReader;
 import java.math.BigInteger;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -39,12 +40,12 @@ import org.testcontainers.shaded.org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.testcontainers.shaded.org.bouncycastle.asn1.x509.NameConstraints;
 import org.testcontainers.shaded.org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.testcontainers.shaded.org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.testcontainers.shaded.org.bouncycastle.cert.X509CRLHolder;
 import org.testcontainers.shaded.org.bouncycastle.cert.X509CertificateHolder;
 import org.testcontainers.shaded.org.bouncycastle.openssl.PEMParser;
 import org.testcontainers.shaded.org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import io.quarkus.test.QuarkusUnitTest;
+import io.quarkus.vault.pki.CAChainData;
 import io.quarkus.vault.pki.CRLData;
 import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.CertificateExtendedKeyUsage;
@@ -889,11 +890,11 @@ public class VaultPKIITCase {
 
         // Test CRL get (PEM)
         CRLData.PEM pemCRL = pkiSecretEngine.getCertificateRevocationList();
-        assertDoesNotThrow(() -> (X509CRLHolder) new PEMParser(new StringReader(pemCRL.getData())).readObject());
+        assertDoesNotThrow(pemCRL::getCRL);
 
         // Test CRL get (DER)
         CRLData.DER derCRL = (CRLData.DER) pkiSecretEngine.getCertificateRevocationList(DataFormat.DER);
-        assertDoesNotThrow(() -> new X509CRLHolder(derCRL.getData()));
+        assertDoesNotThrow(derCRL::getCRL);
     }
 
     @Test
@@ -934,13 +935,11 @@ public class VaultPKIITCase {
                 .setSignedIntermediateCA(result.certificate.getData() + "\n" + generatedRootCertificate.certificate.getData());
 
         // Get CA chain and check subjects
-        PEMParser pemParser = new PEMParser(new StringReader(pkiSecretEngine2.getCertificateAuthorityChain()));
+        CAChainData.PEM caChainData = pkiSecretEngine2.getCertificateAuthorityChain();
+        List<X509Certificate> certificates = assertDoesNotThrow(caChainData::getCertificates);
 
-        X509CertificateHolder intCACert = (X509CertificateHolder) pemParser.readObject();
-        assertEquals("CN=test1.example.com", intCACert.getSubject().toString());
-
-        X509CertificateHolder rootCACert = (X509CertificateHolder) pemParser.readObject();
-        assertEquals("CN=root.example.com", rootCACert.getSubject().toString());
+        assertEquals("CN=root.example.com", certificates.get(1).getSubjectX500Principal().toString());
+        assertEquals("CN=test1.example.com", certificates.get(0).getSubjectX500Principal().toString());
     }
 
     @Test

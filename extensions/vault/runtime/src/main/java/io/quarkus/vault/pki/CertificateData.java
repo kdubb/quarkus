@@ -1,10 +1,7 @@
 package io.quarkus.vault.pki;
 
-import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 
 public interface CertificateData {
 
@@ -48,8 +45,7 @@ public interface CertificateData {
 
         @Override
         public X509Certificate getCertificate() throws CertificateException {
-            return (X509Certificate) CertificateFactory.getInstance("X.509")
-                    .generateCertificate(new ByteArrayInputStream(derData));
+            return X509Parsing.parseDERCertificate(derData);
         }
     }
 
@@ -76,14 +72,7 @@ public interface CertificateData {
 
         @Override
         public X509Certificate getCertificate() throws CertificateException {
-            String base64Data = pemData
-                    .replace("-----BEGIN CERTIFICATE-----", "")
-                    .replace("-----END CERTIFICATE-----", "");
-
-            byte[] derData = Base64.getMimeDecoder().decode(base64Data);
-
-            return (X509Certificate) CertificateFactory.getInstance("X.509")
-                    .generateCertificate(new ByteArrayInputStream(derData));
+            return X509Parsing.parsePEMCertificate(pemData);
         }
     }
 

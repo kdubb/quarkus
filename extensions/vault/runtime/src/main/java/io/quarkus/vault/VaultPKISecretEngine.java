@@ -3,6 +3,7 @@ package io.quarkus.vault;
 import java.time.OffsetDateTime;
 import java.util.List;
 
+import io.quarkus.vault.pki.CAChainData;
 import io.quarkus.vault.pki.CRLData;
 import io.quarkus.vault.pki.CertificateData;
 import io.quarkus.vault.pki.ConfigCRLOptions;
@@ -82,7 +83,7 @@ public interface VaultPKISecretEngine {
      *
      * @return Certificate authority chain.
      */
-    String getCertificateAuthorityChain();
+    CAChainData.PEM getCertificateAuthorityChain();
 
     /**
      * Retrieves the engine's CRL (PEM encoded).

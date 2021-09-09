@@ -18,6 +18,7 @@ import javax.inject.Inject;
 
 import io.quarkus.vault.VaultException;
 import io.quarkus.vault.VaultPKISecretEngine;
+import io.quarkus.vault.pki.CAChainData;
 import io.quarkus.vault.pki.CRLData;
 import io.quarkus.vault.pki.CSRData;
 import io.quarkus.vault.pki.CertificateData;
@@ -174,10 +175,9 @@ public class VaultPKIManager implements VaultPKISecretEngine {
     }
 
     @Override
-    public String getCertificateAuthorityChain() {
+    public CAChainData.PEM getCertificateAuthorityChain() {
         Buffer data = vaultInternalPKISecretEngine.getCertificateAuthorityChain(getToken(), mount);
-
-        return data.toString(StandardCharsets.UTF_8);
+        return new CAChainData.PEM(data.toString(StandardCharsets.UTF_8));
     }
 
     @Override
